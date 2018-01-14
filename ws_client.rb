@@ -20,7 +20,14 @@ class WSClient
     #@driver.add_extension(PermessageDeflate)
 
     #@driver.on(:open)    { |event| send "Hello world!" }
-    @driver.on(:message) { |event| p [:message, event.data] }
+    @driver.on(:message) do |event|
+      begin
+        json = JSON.parse(event.data)
+      rescue JSON::ParserError => e
+        json = event.data
+      end
+      p [:message, json]
+    end
     @driver.on(:close)   { |event| finalize(event) }
 
     @thread = Thread.new do
@@ -51,4 +58,3 @@ class WSClient
 end
 
 @a = WSClient.new('ws://localhost:8080')
-@b = WSClient.new('ws://localhost:8080')

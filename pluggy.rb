@@ -5,12 +5,25 @@ require 'se/realtime'
 require 'se/api'
 require 'yaml'
 
+require './db'
+
 config = YAML.load_file('./config.yml')
 cb = ChatBot.new(config['ChatXUsername'], config['ChatXPassword'])
 cli = SE::API::Client.new(config['APIKey'])
 
 cb.login
-cb.join_room(63561)
+cb.join_rooms(ChatSubscription.all.map(&:room_id))
+
+cb.add_hook('*', '*') do |event, room_id|
+  WSClient.clients.each do |c|
+    next if c.client.nil?
+    c.client.chat_subscriptions.where(room_id: room_id, event_id: [event.type, nil]).each do |s|
+      puts "SENDDDING #{event.hash.class}\n\n#{event.hash}"
+      c.send(event.hash)
+    end
+  end
+  puts "Got #{event.type} in #{room_id} (#{event})"
+end
 
 def load_thresholds
   # Generate a hash with a default of 1
@@ -18,7 +31,7 @@ def load_thresholds
   YAML.load_file('thresholds.yml').map do |k, v|
     t[k] = v
   end
-  t # I know this is bad, but I need the efaults set correctly
+  t # I know this is bad, but I need the defaults set correctly
 end
 
 queue = Hash.new {|hsh, key| hsh[key] = []}
@@ -29,26 +42,25 @@ SE::Realtime.json do |e|
   id = e[:id]
   site = e[:site]
   # Adds the post ID to the queue of ids
-  queue[site] << id
+  queue[site] << [id, Time.now]
   if queue[site].length >= thresholds[site]
-    cli.questions(queue[site], site: site).each do |question|
-      Client.send_authenticated(question: question.json, answers: question.answers.map(&:json))
-      #question_posts = question.answswers.push(question)
-      #puts '='*80
-      #question_posts.each do |post|
-      #  puts "#{post.class} #{post.last_activity_date} #{post.title}"
-      #end
-      #puts '='*80
-      #post = question_posts.sort_by(&:last_activity_date).first
-      #reports_for(post).each do |report|
-      #  puts report
-      #  cb.say(report, 63561)
-      #end
+    ftime = queue[site].map { |i| i[1] }.sort.first
+    cli.questions(queue[site].map(&:first), site: site).each do |question|
+      answers = question.answers
+      posts[site] << [question, answers].flatten
+      new_posts = [question, answers].flatten.select { |p| Time.new(p.created_at) > ftime }
+      WSClient.clients.each do |c|
+        next if c.client.nil?
+        c.client.post_subscriptions.where(site: [site, nil]).each do |s|
+          c.send(posts: new_posts.map(&:json))
+        end
+      end
     end
+    queue.delete(site)
   end
 end
 
-class Client
+class WSClient
   class << self
     def clients
       @clients ||= []
@@ -70,17 +82,16 @@ class Client
     end
   end
   
-  attr_reader :authenticated
+  attr_reader :authenticated, :client
 
   def initialize(ws, cb)
     @cb = cb
     @authenticated = false
     @ws = ws
-    @config = {} # rooms: ; .... STEAL FROM QUART
     @ws.on :message do |event|
       puts "Got msg: #{event.data}"
       if @authenticated || authenticate(event.data)
-        send "You're #{@user[0]}"
+        send "You're #{@client.name}"
         parse(event.data)
       end
     end
@@ -88,10 +99,10 @@ class Client
   end
 
   def authenticate(key)
-    @user = keys.select { |k, v| key == v }.to_a[0]
-    if !@user.nil?
+    @client = Client.find_by(key: key)
+    if !@client.nil?
       @authenticated = true
-      send status: 'sucess', bot: @user[0]
+      send status: 'sucess', bot: @client.name
     else
       send status: 'failed'
     end
@@ -107,10 +118,6 @@ class Client
 
   private
 
-  def keys
-    {bota: 'abcde', botb: '12345'}
-  end
-
   def parse(text)
     json = JSON.parse(text)
     unless json.is_a? Hash
@@ -121,7 +128,7 @@ class Client
     when "say"
       msg = json['msg']
       puts "Saying '#{msg}'"
-      @cb.say("[#{@user[0]}] #{msg}", 63561)
+      @cb.say("[#{@client.name}] #{msg}", 63561)
       send complete: true, msg: msg
     when "ts"
       time = Time.now.to_s
@@ -131,17 +138,13 @@ class Client
   end
 end
 
-#SE::Realtime.json do |data|
-#  Client.clients.each { |c| c.send action: 'post', data: data }
-#end
-
 App = lambda do |env|
   if Faye::WebSocket.websocket?(env)
     ws = Faye::WebSocket.new(env)
 
     ws.on(:open) { puts "OPENED" }
 
-    Client.new(ws, cb)
+    WSClient.new(ws, cb)
 
     ws.on :close do |event|
       p [:close, event.code, event.reason]
