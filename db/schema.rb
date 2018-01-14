@@ -12,16 +12,22 @@
 
 ActiveRecord::Schema.define(version: 20180113232726) do
 
+  create_table "chat_subscriptions", force: :cascade do |t|
+    t.integer "client_id"
+    t.integer "room_id"
+    t.integer "event_id"
+  end
+
   create_table "clients", force: :cascade do |t|
     t.text "key"
     t.text "name"
     t.text "link"
   end
 
-  create_table "subscriptions", force: :cascade do |t|
+  create_table "post_subscriptions", force: :cascade do |t|
     t.integer "client_id"
-    t.integer "room_id"
-    t.integer "event_id"
+    t.text "type"
+    t.text "site"
   end
 
 end

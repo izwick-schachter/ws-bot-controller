@@ -14,7 +14,7 @@ class InitializeClientsTable < ActiveRecord::Migration[5.1]
 
     create_table :post_subscriptions do |t|
       t.integer :client_id
-      t.text :post_type
+      t.text :type
       t.text :site
     end
   end

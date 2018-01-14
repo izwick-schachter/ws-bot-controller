@@ -18,7 +18,6 @@ cb.add_hook('*', '*') do |event, room_id|
   WSClient.clients.each do |c|
     next if c.client.nil?
     c.client.chat_subscriptions.where(room_id: room_id, event_id: [event.type, nil]).each do |s|
-      puts "SENDDDING #{event.hash.class}\n\n#{event.hash}"
       c.send(event.hash)
     end
   end
@@ -44,15 +43,28 @@ SE::Realtime.json do |e|
   # Adds the post ID to the queue of ids
   queue[site] << [id, Time.now]
   if queue[site].length >= thresholds[site]
+    puts "Clearing queue on #{site} (#{queue[site]})"
     ftime = queue[site].map { |i| i[1] }.sort.first
     cli.questions(queue[site].map(&:first), site: site).each do |question|
+      puts "Begining iteration on a question for site #{site}"
       answers = question.answers
       posts[site] << [question, answers].flatten
-      new_posts = [question, answers].flatten.select { |p| Time.new(p.created_at) > ftime }
-      WSClient.clients.each do |c|
-        next if c.client.nil?
-        c.client.post_subscriptions.where(site: [site, nil]).each do |s|
-          c.send(posts: new_posts.map(&:json))
+      new_posts = [question, answers].flatten.select { |p| Time.new(p.updated_at) > ftime }
+      puts "New posts on question: #{new_posts.length}"
+      new_posts.each do |p|
+        WSClient.clients.each do |c|
+          next if c.client.nil?
+          type = case p
+          when SE::API::Question
+            'question'
+          when SE::API::Answer
+            'answer'
+          end
+          puts "Sending new post #{p.id} (gotta check subs)"
+          c.client.post_subscriptions.where(site: [site, nil], type: [type, nil]).each do |s|
+            puts "Sending new post #{p.id}"
+            c.send(post: p.json)
+          end
         end
       end
     end
@@ -112,7 +124,7 @@ class WSClient
   def send(msg)
     return unless @authenticated
     msg = msg.to_json if msg.is_a? Hash
-    puts "Sending #{msg} (#{msg.class})"
+    puts "Sending #{msg;nil} (#{msg.class})"
     @ws.send(msg)
   end
 

@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/izwick-schachter/se-api
-  revision: 5cfb22e23af167dcf2700d2eefdbb85fcab56e76
+  revision: 59e619e49614a537b368f54b42ff34b084c3afde
   branch: master
   specs:
     se-api (0.0.0.beta1)

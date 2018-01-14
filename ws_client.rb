@@ -23,6 +23,7 @@ class WSClient
     @driver.on(:message) do |event|
       begin
         json = JSON.parse(event.data)
+        json = json["post"]["post_id"] || json["post"]["answer_id"] || json["post"]["question_id"] if json["post"].respond_to? :[]
       rescue JSON::ParserError => e
         json = event.data
       end
