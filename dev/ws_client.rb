@@ -26,6 +26,7 @@ class WSClient
     @driver.on(:message) do |event|
       begin
         json = JSON.parse(event.data)
+        # Reports the post/question/answer ID instead of the whole post.
         json = json["post"]["post_id"] || json["post"]["answer_id"] || json["post"]["question_id"] if json["post"].respond_to? :[]
       rescue JSON::ParserError => e
         json = event.data
@@ -61,8 +62,8 @@ class WSClient
   end
 end
 
-#@a = WSClient.new('ws://smelly.dvtk.me')
-@a = WSClient.new('ws://localhost:8080')
+@a = WSClient.new('ws://smelly.dvtk.me')
+#@a = WSClient.new('ws://localhost:8080')
 def s(msg)
   @a.send(msg)
 end
