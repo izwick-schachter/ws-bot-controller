@@ -28,10 +28,7 @@ end
 def load_thresholds
   # Generate a hash with a default of 1
   t = Hash.new {|h, k| h[k] = 1 }
-  YAML.load_file('thresholds.yml').map do |k, v|
-    t[k] = v
-  end
-  t # I know this is bad, but I need the defaults set correctly
+  t.merge YAML.load_file('thresholds.yml').map
 end
 
 queue = Hash.new {|hsh, key| hsh[key] = []}
@@ -144,25 +141,30 @@ class WSClient
 
   def parse(text)
     json = JSON.parse(text)
+    
     unless json.is_a? Hash
       send status: 'invalid', msg: "You didn't send correct JSON"
       return
     end
+    
     unless @client
       send status: 'not authenticated', msg: "You haven't authenticated yourself"
       return
     end
+    
     json.on 'say' do |msg|
       if @cb.say("[#{@client.name}] #{msg}", 63561)
         log "Saying '#{msg}'"
         send action: 'say', success: true, msg: msg
       end
     end
+    
     json.on 'ts' do
       time = Time.now.to_s
       log "Telling timestamp '#{time}'"
       send action: 'ts', success: true, time: time
     end
+
     json.on 'ping' do
       last_ping = DateTime.now
       if @client.update(last_ping: last_ping)
@@ -172,6 +174,7 @@ class WSClient
         send action: 'ping', success: false
       end
     end
+    
     json.on 'status' do |status|
       if @client.update(status: status)
         log "Updated status to be #{status}"

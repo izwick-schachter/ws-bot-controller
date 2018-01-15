@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'chatx', path: '~/SE/ChatX' #, git: 'https://gitlab.com/izwick-schachter/chatx', branch: 'master'
+gem 'chatx', git: 'https://gitlab.com/izwick-schachter/chatx', branch: 'add_server_to_hooks'
 gem 'se-realtime', git: 'https://github.com/izwick-schachter/se-realtime', branch: 'master'
 gem 'se-api', git: 'https://github.com/izwick-schachter/se-api', branch: 'master'
 gem 'websocket-driver'

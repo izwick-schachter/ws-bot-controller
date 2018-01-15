@@ -16,8 +16,10 @@ GIT
       permessage_deflate (~> 0.1)
       websocket-driver (~> 0.6)
 
-PATH
-  remote: ../ChatX
+GIT
+  remote: https://gitlab.com/izwick-schachter/chatx
+  revision: 0176e30de5a39f6e8870fa48b0d157f7813cc7a2
+  branch: add_server_to_hooks
   specs:
     chatx (0.0.0.pre.pre3)
       htmlentities (~> 4.3)
