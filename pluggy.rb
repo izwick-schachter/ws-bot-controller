@@ -28,7 +28,7 @@ end
 def load_thresholds
   # Generate a hash with a default of 1
   t = Hash.new {|h, k| h[k] = 1 }
-  t.merge YAML.load_file('thresholds.yml').map
+  t.merge YAML.load_file('thresholds.yml')
 end
 
 queue = Hash.new {|hsh, key| hsh[key] = []}
