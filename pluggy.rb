@@ -178,6 +178,7 @@ class WSClient
         send action: 'status', sucess: true, status: status
       else
         send action: 'status', sucess: false
+      end
     end
   end
 
