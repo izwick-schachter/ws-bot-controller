@@ -4,6 +4,8 @@ class InitializeClientsTable < ActiveRecord::Migration[5.1]
       t.text :key
       t.text :name
       t.text :link
+      t.datetime :last_ping
+      t.text :status
     end
 
     create_table :chat_subscriptions do |t|

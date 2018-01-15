@@ -22,6 +22,8 @@ ActiveRecord::Schema.define(version: 20180113232726) do
     t.text "key"
     t.text "name"
     t.text "link"
+    t.datetime "last_ping"
+    t.text "status"
   end
 
   create_table "post_subscriptions", force: :cascade do |t|

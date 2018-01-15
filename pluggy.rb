@@ -4,6 +4,7 @@ require 'chatx'
 require 'se/realtime'
 require 'se/api'
 require 'yaml'
+require 'time'
 
 require './db'
 
@@ -72,7 +73,18 @@ SE::Realtime.json do |e|
   end
 end
 
+module HashRefinements
+  refine Hash do
+    def on(k, &block)
+      Thread.new { block.call(self[k]) } if key? k
+    end
+  end
+end
+
+
 class WSClient
+  using HashRefinements
+
   class << self
     def clients
       @clients ||= []
@@ -136,17 +148,36 @@ class WSClient
       send status: 'invalid', msg: "You didn't send correct JSON"
       return
     end
-    case json["action"]
-    when "say"
-      msg = json['msg']
-      puts "Saying '#{msg}'"
-      @cb.say("[#{@client.name}] #{msg}", 63561)
-      send complete: true, msg: msg
-    when "ts"
-      time = Time.now.to_s
-      puts "Telling timestamp '#{time}'"
-      send time: time
+    unless @client
+      send status: 'not authenticated', msg: "You haven't authenticated yourself"
+      return
     end
+    json.on 'say' do |msg|
+      if @cb.say("[#{@client.name}] #{msg}", 63561)
+        log "Saying '#{msg}'"
+        send action: 'say', msg: msg
+      end
+    end
+    json.on 'ts' do
+      time = Time.now.to_s
+      log "Telling timestamp '#{time}'"
+      send action: 'ts', time: time
+    end
+    json.on 'ping' do
+      last_ping = DateTime.now
+      log "Updating ping to #{last_ping}"
+      send action: 'ping', last_ping: last_ping if @client.update(last_ping: last_ping)
+    end
+    json.on 'status' do |status|
+      if @client.update(status: status)
+        log "Updated status to be #{status}"
+        send action: 'status', status: status
+      end
+    end
+  end
+
+  def log(msg)
+    puts "[#{@client.name}] #{msg}"
   end
 end
 

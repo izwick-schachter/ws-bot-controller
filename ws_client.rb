@@ -2,6 +2,7 @@ require 'websocket/driver'
 require 'socket'
 require 'uri'
 require 'json'
+require 'logger'
 
 class WSClient
   DEFAULT_PORTS = {'ws' => 80, 'wss' => 443}
@@ -16,6 +17,8 @@ class WSClient
     @tcp  = TCPSocket.new(@uri.host, @port)
     @dead = false
 
+    @logger = Logger.new('ws_client.log')
+
     @driver = WebSocket::Driver.client(self)
     #@driver.add_extension(PermessageDeflate)
 
@@ -27,7 +30,7 @@ class WSClient
       rescue JSON::ParserError => e
         json = event.data
       end
-      p [:message, json]
+      @logger.info [:message, json]
     end
     @driver.on(:close)   { |event| finalize(event) }
 
@@ -40,7 +43,7 @@ class WSClient
 
   def send(message)
     message = message.to_json if message.is_a? Hash
-    @driver.text(message)
+    @driver.text(message.to_s)
   end
 
   def write(data)
@@ -52,10 +55,14 @@ class WSClient
   end
 
   def finalize(event)
-    p [:close, event.code, event.reason]
+    @logger.info [:close, event.code, event.reason]
     @dead = true
     @thread.kill
   end
 end
 
+#@a = WSClient.new('ws://smelly.dvtk.me')
 @a = WSClient.new('ws://localhost:8080')
+def s(msg)
+  @a.send(msg)
+end
