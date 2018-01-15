@@ -155,29 +155,29 @@ class WSClient
     json.on 'say' do |msg|
       if @cb.say("[#{@client.name}] #{msg}", 63561)
         log "Saying '#{msg}'"
-        send action: 'say', sucess: true, msg: msg
+        send action: 'say', success: true, msg: msg
       end
     end
     json.on 'ts' do
       time = Time.now.to_s
       log "Telling timestamp '#{time}'"
-      send action: 'ts', sucess: true, time: time
+      send action: 'ts', success: true, time: time
     end
     json.on 'ping' do
       last_ping = DateTime.now
       if @client.update(last_ping: last_ping)
         log "Updating ping to #{last_ping}"
-        send action: 'ping', sucess: true, last_ping: last_ping
+        send action: 'ping', success: true, last_ping: last_ping
       else
-        send action: 'ping', sucess: false
+        send action: 'ping', success: false
       end
     end
     json.on 'status' do |status|
       if @client.update(status: status)
         log "Updated status to be #{status}"
-        send action: 'status', sucess: true, status: status
+        send action: 'status', success: true, status: status
       else
-        send action: 'status', sucess: false
+        send action: 'status', success: false
       end
     end
   end

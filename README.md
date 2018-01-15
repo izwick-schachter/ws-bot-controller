@@ -23,7 +23,7 @@ Written in ruby, with the help from:
 
 First of all, you need a key. You can get one by pinging @thesecretmaster in SE chat. They can typically be found in [The Closet](https://chat.stackexchange.com/rooms/63296/the-closet) or [Under The Bed](https://chat.stackexchange.com/rooms/63561/under-the-bed). (Yes, this could be a security issue, but this project is just in a testing phase right now)
 
-Second, open a WebSocket connection to the WebSocket server at smelly.dvtk.me. Currently, wss is not supported, so you've gotta use plain old ws. To authenticate, simply send your key down the socket. You should recieve a reply of the form: `{status: 'sucess', bot: <name of bot or nil>}`. If your key is invalid or another error has occured, you will recieve the message: `{status: 'failed'}`. If you recieve neither, you've discoved a bug -- open an issue or ping @thesecretmaster in chat.
+Second, open a WebSocket connection to the WebSocket server at smelly.dvtk.me. Currently, wss is not supported, so you've gotta use plain old ws. To authenticate, simply send your key down the socket. You should recieve a reply of the form: `{status: 'success', bot: <name of bot or nil>}`. If your key is invalid or another error has occured, you will recieve the message: `{status: 'failed'}`. If you recieve neither, you've discoved a bug -- open an issue or ping @thesecretmaster in chat.
 
 As soon as you've been authenticated, the server will begin sending the posts and chat messages that you've subscribed to. They will look like this:
 
@@ -32,13 +32,13 @@ As soon as you've been authenticated, the server will begin sending the posts an
 
 You can also send messages to the server. The server accepts valid json. If the json is not valid, you will get the response `{status: 'invalid', msg: "You didn't send correct JSON"}`. Here is a list of the keys the server accepts and how it will respond. You can send multiple keys in one message, but each one will get an individual response. All responses will include an `action` key with the action called as the value:
 
-- `ping: <anything>` => `{action: 'ping', sucess: true last_ping: <timestamp>}`
+- `ping: <anything>` => `{action: 'ping', success: true last_ping: <timestamp>}`
   - Updates last_ping time for the bot to the time listed in the reply. This last_ping time may be listed in the web interface
-- `ts: <anything>` => `{action: 'ts', sucess: true time: <current server time>}`
+- `ts: <anything>` => `{action: 'ts', success: true time: <current server time>}`
   - Reports server time back to the bot.
-- `status: <some text>` => `{action: 'status', sucess: true status: <status that was set>}`
+- `status: <some text>` => `{action: 'status', success: true status: <status that was set>}`
   - Sets the bot status to the text sent. This status may be displayed on the web interface.
-- `say: <some message>` => `{action: 'say', sucess: true, msg: <message that was sent>}`
+- `say: <some message>` => `{action: 'say', success: true, msg: <message that was sent>}`
   - Sends the message to the one and only chat room that is currently available, Under The Bed
 
-If the action fails for any reason, a reply will be recieved of the form `{action: <the action>, sucess: false}`. If you recieve no response (within a second or two) report a bug either via an issue or by pinging @thesecretmaster in chat.
+If the action fails for any reason, a reply will be recieved of the form `{action: <the action>, success: false}`. If you recieve no response (within a second or two) report a bug either via an issue or by pinging @thesecretmaster in chat.
