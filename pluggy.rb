@@ -19,7 +19,7 @@ cb.add_hook('*', '*') do |event, room_id|
   WSClient.clients.each do |c|
     next if c.client.nil?
     c.client.chat_subscriptions.where(room_id: room_id, event_id: [event.type, nil]).each do |s|
-      c.send(event.hash)
+      c.send(msg: event.hash)
     end
   end
   puts "Got #{event.type} in #{room_id} (#{event})"
@@ -155,24 +155,29 @@ class WSClient
     json.on 'say' do |msg|
       if @cb.say("[#{@client.name}] #{msg}", 63561)
         log "Saying '#{msg}'"
-        send action: 'say', msg: msg
+        send action: 'say', sucess: true, msg: msg
       end
     end
     json.on 'ts' do
       time = Time.now.to_s
       log "Telling timestamp '#{time}'"
-      send action: 'ts', time: time
+      send action: 'ts', sucess: true, time: time
     end
     json.on 'ping' do
       last_ping = DateTime.now
-      log "Updating ping to #{last_ping}"
-      send action: 'ping', last_ping: last_ping if @client.update(last_ping: last_ping)
+      if @client.update(last_ping: last_ping)
+        log "Updating ping to #{last_ping}"
+        send action: 'ping', sucess: true, last_ping: last_ping
+      else
+        send action: 'ping', sucess: false
+      end
     end
     json.on 'status' do |status|
       if @client.update(status: status)
         log "Updated status to be #{status}"
-        send action: 'status', status: status
-      end
+        send action: 'status', sucess: true, status: status
+      else
+        send action: 'status', sucess: false
     end
   end
 
